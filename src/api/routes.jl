@@ -2,11 +2,8 @@
     routes
 
 API routes for the myAnalytics analytics service
+This file should be included in the main myAnalytics module where Oxygen is already loaded.
 """
-
-using Oxygen
-using JSON
-using Dates
 
 # Health check endpoint
 @get "/health" function()

@@ -50,8 +50,7 @@ function start_server(; host="0.0.0.0", port=8080, ssl=false, ssl_cert="", ssl_k
     println("SSL: $(SERVER_CONFIG[:ssl])")
     println("=" ^ 60)
 
-    # Register routes from routes module
-    include("routes.jl")
+    # Routes are registered in the main module before this function is called
 
     # Start the server
     if ssl && !isempty(ssl_cert) && !isempty(ssl_key)

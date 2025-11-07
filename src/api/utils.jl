@@ -9,6 +9,8 @@ module AnalyticsUtils
 using JSON
 using Dates
 using Parameters
+using HTTP
+using Statistics
 
 export Response, ErrorResponse, validate_metric_name, format_timestamp, 
        parse_query_params, create_logger
@@ -105,11 +107,11 @@ Basic input sanitization for security.
 function sanitize_input(input::String)::String
     # Remove potential SQL injection characters
     # This is a basic example - use parameterized queries in production
-    dangerous_chars = ['\'', '"', ';', '--', '/*', '*/']
+    dangerous_chars = ["'", "\"", ";", "--", "/*", "*/"]
     
     result = input
     for char in dangerous_chars
-        result = replace(result, string(char) => "")
+        result = replace(result, char => "")
     end
     
     return strip(result)

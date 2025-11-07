@@ -4,50 +4,49 @@
 Startup script for myAnalytics API server
 
 Usage:
-    julia start_server.jl                   # Start with defaults (0.0.0.0:8080)
-    julia start_server.jl 8080              # Custom port
-    julia start_server.jl 8443 ssl          # With SSL (uses ssl/cert.pem and ssl/key.pem)
+    julia start_server.jl                       # Start with defaults (0.0.0.0:8080)
+    julia start_server.jl 8080                  # Custom port
+    julia start_server.jl 8080 0.0.0.0          # Custom port and host
+    julia start_server.jl 8443 0.0.0.0 ssl      # With SSL
 """
 
+# Change to project directory
+cd(@__DIR__)
+
+# Activate the project environment
+using Pkg
+Pkg.activate(".")
+
+# Load the module
 using myAnalytics
-using ArgParse
-
-function parse_commandline()
-    s = ArgParseSettings()
-
-    @add_arg_table! s begin
-        "port"
-            help = "Port to listen on"
-            arg_type = Int
-            default = 8080
-        "--host"
-            help = "Host to bind to"
-            arg_type = String
-            default = "0.0.0.0"
-        "--ssl"
-            help = "Enable SSL/HTTPS"
-            action = :store_true
-        "--cert"
-            help = "Path to SSL certificate file"
-            arg_type = String
-            default = "ssl/cert.pem"
-        "--key"
-            help = "Path to SSL key file"
-            arg_type = String
-            default = "ssl/key.pem"
-    end
-
-    return parse_args(s)
-end
 
 function main()
-    args = parse_commandline()
+    # Parse command line arguments
+    port = 8080
+    host = "0.0.0.0"
+    ssl_enabled = false
+    cert_path = "ssl/cert.pem"
+    key_path = "ssl/key.pem"
     
-    port = args["port"]
-    host = args["host"]
-    ssl_enabled = args["ssl"]
-    cert_path = args["cert"]
-    key_path = args["key"]
+    # Parse arguments
+    if length(ARGS) >= 1
+        port = parse(Int, ARGS[1])
+    end
+    
+    if length(ARGS) >= 2
+        # Check if second arg is "ssl" or a host
+        if ARGS[2] == "ssl"
+            ssl_enabled = true
+        else
+            host = ARGS[2]
+        end
+    end
+    
+    if length(ARGS) >= 3
+        if ARGS[3] == "ssl"
+            ssl_enabled = true
+        end
+    end
     
     # Start the API server
     if ssl_enabled

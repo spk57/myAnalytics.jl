@@ -1,11 +1,16 @@
 module myAnalytics
 
 using Oxygen
+using JSON
+using Dates
 
 # Include API modules
 include("api/utils.jl")
 include("api/middleware.jl")
 include("api/server.jl")
+
+# Include routes (needs to be here where Oxygen macros are available)
+include("api/routes.jl")
 
 # Re-export key functions
 using .AnalyticsServer: start_server, stop_server
