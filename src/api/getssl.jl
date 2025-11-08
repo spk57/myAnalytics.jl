@@ -1,10 +1,4 @@
-#=
-SSL.jl is a wrapper for the StateSpaceLearning.jl package to get the structural model for the prices.
-=#
-#using Pkg
-#Pkg.add("StateSpaceLearning")
-#Pkg.build("StateSpaceLearning")
-
+#getssl.jl is a function to get the structural model for a list of prices
 using StateSpaceLearning
 using Statistics
 
