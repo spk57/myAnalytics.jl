@@ -41,10 +41,11 @@ end
 end
 
 # Metrics endpoint - POST query for analytics
-@post "/api/metrics/query" function()
+@post "/api/metrics/query" function(req)
     try
         # Parse request body
-        body = @json
+        body_str = String(req.body)
+        body = isempty(body_str) ? Dict() : JSON.parse(body_str; dicttype=Dict{Symbol, Any})
         
         # Validate request
         if !haskey(body, :metric)
@@ -117,9 +118,11 @@ end
 end
 
 # Analytics aggregation endpoint
-@post "/api/analytics/aggregate" function()
+@post "/api/analytics/aggregate" function(req)
     try
-        body = @json
+        # Parse request body
+        body_str = String(req.body)
+        body = isempty(body_str) ? Dict() : JSON.parse(body_str; dicttype=Dict{Symbol, Any})
         
         agg_type = get(body, :type, "sum")  # sum, avg, min, max, count
         metrics = get(body, :metrics, [])
@@ -170,7 +173,8 @@ end
 end
 
 # 404 handler - catch-all for undefined routes
-@route "/:path..." function(path)
+# Note: This will only catch GET requests. For other methods, Oxygen will return default 404
+@get "/:path..." function(path)
     return Dict(
         :status => 404,
         :error => "Endpoint not found",

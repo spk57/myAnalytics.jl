@@ -1,8 +1,10 @@
 module myAnalytics
 
 using Oxygen
+import Oxygen: @get, @post, @put, @patch, @delete
 using JSON
 using Dates
+using HTTP
 
 # Include API modules
 include("api/utils.jl")
