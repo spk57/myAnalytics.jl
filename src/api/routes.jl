@@ -172,6 +172,80 @@ end
     )
 end
 
+# SSL (Structural State Space Learning) Analysis endpoint
+# Performs time series analysis on price data using structural models
+@post "/api/analytics/ssl" function(req)
+    try
+        # Parse request body
+        body_str = String(req.body)
+        body = isempty(body_str) ? Dict() : JSON.parse(body_str; dicttype=Dict{Symbol, Any})
+        
+        # Validate request - require prices array
+        if !haskey(body, :prices)
+            return Dict(
+                :status => 400,
+                :error => "Missing required field: prices",
+                :message => "Please provide a 'prices' array in the request body",
+                :timestamp => Dates.now()
+            )
+        end
+        
+        prices = body[:prices]
+        
+        # Validate prices is an array
+        if !isa(prices, Vector) && !isa(prices, Array)
+            return Dict(
+                :status => 400,
+                :error => "Invalid data type",
+                :message => "'prices' must be an array of numbers",
+                :timestamp => Dates.now()
+            )
+        end
+        
+        # Convert to Vector{Float64} if needed
+        try
+            prices_vec = convert(Vector{Float64}, prices)
+        catch e
+            return Dict(
+                :status => 400,
+                :error => "Invalid price values",
+                :message => "All prices must be numeric values",
+                :details => string(e),
+                :timestamp => Dates.now()
+            )
+        end
+        
+        # Call getssl function
+        result = getssl(prices_vec)
+        
+        # Format response to match API standard
+        if get(result, :success, false)
+            return Dict(
+                :status => 200,
+                :data => result,
+                :message => get(result, :message, "SSL analysis completed successfully"),
+                :timestamp => Dates.now()
+            )
+        else
+            return Dict(
+                :status => 500,
+                :error => "SSL analysis failed",
+                :message => get(result, :message, "Unknown error occurred"),
+                :timestamp => Dates.now()
+            )
+        end
+        
+    catch e
+        return Dict(
+            :status => 500,
+            :error => "Internal server error",
+            :message => "An error occurred while processing the SSL analysis request",
+            :details => string(e),
+            :timestamp => Dates.now()
+        )
+    end
+end
+
 # 404 handler - catch-all for undefined routes
 # Note: This will only catch GET requests. For other methods, Oxygen will return default 404
 @get "/:path..." function(path)
@@ -187,7 +261,8 @@ end
             "/api/metrics/list",
             "/api/analytics/summary",
             "/api/analytics/timeseries/:metric",
-            "/api/analytics/aggregate (POST)"
+            "/api/analytics/aggregate (POST)",
+            "/api/analytics/ssl (POST)"
         ]
     )
 end

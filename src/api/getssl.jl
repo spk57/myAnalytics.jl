@@ -92,7 +92,7 @@ function getssl(prices)
             stats[:smmaxd] = minmaxmonth.max[2]
             stats[:smmind] = minmaxmonth.min[2]
         end
-        stats[:return] = 100.0(prices_jl[end] - prices_jl[1]) / prices_jl[1]
+        stats[:return] = 100.0 * (prices_jl[end] - prices_jl[1]) / prices_jl[1]
 
         # Prepare the result with error checking
         result = Dict{Symbol,Any}(

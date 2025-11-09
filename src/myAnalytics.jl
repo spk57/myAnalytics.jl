@@ -10,6 +10,7 @@ using HTTP
 include("api/utils.jl")
 include("api/middleware.jl")
 include("api/server.jl")
+include("api/getssl.jl")  # Include getssl function
 
 # Include routes (needs to be here where Oxygen macros are available)
 include("api/routes.jl")
