@@ -4,6 +4,22 @@
 API routes for the myAnalytics analytics service
 This file should be included in the main myAnalytics module where Oxygen is already loaded.
 """
+# Homepage endpoint
+@route ["GET"] "/" function()
+  html("""
+  <html>
+  <body>
+  <h1>myAnalytics.jl</h1>
+  <p>Welcome to the myAnalytics.jl API</p>
+  <p>Available endpoints:</p>
+  <ul>
+    <li><a href="/docs">Docs</a></li>
+    <li><a href="/greet">Greet</a></li>
+  </ul>
+  </body>
+  </html>
+  """)
+end
 
 # Health check endpoint
 @get "/health" function()
@@ -246,13 +262,15 @@ end
     end
 end
 
+
+
 # 404 handler - catch-all for undefined routes
 # Note: This will only catch GET requests. For other methods, Oxygen will return default 404
-@get "/:path..." function(path)
+@route ["GET", "POST", "PUT", "DELETE"] "/*" function(req::HTTP.Request)
     return Dict(
         :status => 404,
+        :path => req.path,
         :error => "Endpoint not found",
-        :path => path,
         :available_endpoints => [
             "/health",
             "/api/version",
