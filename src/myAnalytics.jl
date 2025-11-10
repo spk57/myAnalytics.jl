@@ -12,18 +12,6 @@ end
 
 route("/") do
     html("myAnalytics.jl")
-  end
-  
-route("/hello.html") do
-  html("Hello World")
-end
-
-route("/hello.json") do
-  json("Hello World")
-end
-
-route("/hello.txt") do
-   respond("Hello World", :text)
 end
 
 # Swagger documentation endpoints
