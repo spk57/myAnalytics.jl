@@ -1,44 +1,25 @@
-module Main 
-using Oxygen
-using HTTP
+using Genie, Genie.Renderer, Genie.Renderer.Html, Genie.Renderer.Json
 
-@get "/greet" function(req::HTTP.Request)
-    return "hello world!"
+route("/*") do
+    throw(HTTP.StatusError(404, "Endpoint Not Found"))
 end
 
-@route ["GET", "POST", "PUT", "DELETE"] "/" function()
-  html("""
-  <html>
-  <body>
-  <h1>myAnalytics.jl</h1>
-  <p>Welcome to the myAnalytics.jl API</p>
-  <p>Available endpoints:</p>
-  <ul>
-    <li><a href="/docs">Docs</a></li>
-    <li><a href="/greet">Greet</a></li>
-  </ul>
-  </body>
-  </html>
-  """)
+route("/") do
+    html("myAnalytics.jl")
+  end
+  
+route("/hello.html") do
+  html("Hello World")
 end
 
-@get "/api" function()
-    return Dict(
-        :status => 200,
-        :message => "API is running"
-    )
+route("/hello.json") do
+  json("Hello World")
 end
 
-@route ["GET", "POST", "PUT", "DELETE"] "/*" function(req::HTTP.Request)
-    return Dict(
-        :status => 404,
-        :error => "Endpoint not found",
-        :available_endpoints => [
-            "/docs",
-            "/greet"
-        ]
-    )
+route("/hello.txt") do
+   respond("Hello World", :text)
 end
 
-serve()
-end
+r=routes()
+println("Routes: $r")
+up(8001, async = false)
