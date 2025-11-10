@@ -1,6 +1,7 @@
 #myAnalytics.jl is a simple API for analytics.
 module myAnalytics
 using Genie, Genie.Renderer, Genie.Renderer.Html, Genie.Renderer.Json
+using JSON
 
 # Include API endpoints
 include("api/getssl.jl")
@@ -23,6 +24,34 @@ end
 
 route("/hello.txt") do
    respond("Hello World", :text)
+end
+
+# Swagger documentation endpoints
+route("/swagger.json") do
+    try
+        swagger_content = read(joinpath(@__DIR__, "..", "swagger.json"), String)
+        respond(swagger_content, :json)
+    catch e
+        Genie.Renderer.setstatuscode(500)
+        json(Dict(:error => "Failed to load Swagger specification: $(sprint(showerror, e))"))
+    end
+end
+
+route("/docs") do
+    try
+        swagger_html = read(joinpath(@__DIR__, "..", "public", "swagger-ui.html"), String)
+        html(swagger_html)
+    catch e
+        Genie.Renderer.setstatuscode(500)
+        html("<html><body><h1>Error loading Swagger UI</h1><p>$(sprint(showerror, e))</p></body></html>")
+    end
+end
+
+route("/api-docs") do
+    # Redirect to /docs for convenience
+    Genie.Renderer.setstatuscode(302)
+    Genie.Renderer.setheaders(Dict("Location" => "/docs"))
+    ""
 end
 
 route("/api/getssl", method = POST) do

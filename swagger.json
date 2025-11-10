@@ -1,0 +1,318 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "myAnalytics API",
+    "description": "A simple API for analytics operations including structural state space learning analysis",
+    "version": "1.0.0",
+    "contact": {
+      "name": "API Support"
+    }
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8001",
+      "description": "Development server"
+    }
+  ],
+  "paths": {
+    "/": {
+      "get": {
+        "summary": "Root endpoint",
+        "description": "Returns the main page",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "text/html": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/hello.html": {
+      "get": {
+        "summary": "Hello HTML",
+        "description": "Returns a simple HTML greeting",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "text/html": {
+                "schema": {
+                  "type": "string",
+                  "example": "Hello World"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/hello.json": {
+      "get": {
+        "summary": "Hello JSON",
+        "description": "Returns a simple JSON greeting",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string",
+                  "example": "Hello World"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/hello.txt": {
+      "get": {
+        "summary": "Hello Text",
+        "description": "Returns a simple text greeting",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string",
+                  "example": "Hello World"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/getssl": {
+      "post": {
+        "summary": "Structural State Space Learning Analysis",
+        "description": "Performs structural state space learning analysis on a list of prices. Returns predictions, fitted values, statistics, and component analysis including level, trend, and seasonal components.",
+        "tags": ["Analytics"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GetSSLRequest"
+              },
+              "example": {
+                "prices": [100.0, 102.5, 101.0, 103.5, 105.0, 104.0, 106.5, 108.0, 107.5, 109.0, 110.0, 111.5, 112.0, 113.5, 115.0, 114.0, 116.5, 118.0, 117.5, 119.0]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Analysis completed successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetSSLResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request - missing or invalid input",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "success": false,
+                  "message": "Missing 'prices' field in request"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "GetSSLRequest": {
+        "type": "object",
+        "required": ["prices"],
+        "properties": {
+          "prices": {
+            "type": "array",
+            "items": {
+              "type": "number",
+              "format": "double"
+            },
+            "description": "Array of price values. Minimum 10 values required for analysis.",
+            "minItems": 10,
+            "example": [100.0, 102.5, 101.0, 103.5, 105.0, 104.0, 106.5, 108.0, 107.5, 109.0]
+          }
+        }
+      },
+      "GetSSLResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "description": "Whether the analysis was successful"
+          },
+          "message": {
+            "type": "string",
+            "description": "Status message"
+          },
+          "predicted": {
+            "type": "array",
+            "items": {
+              "type": "number",
+              "format": "double"
+            },
+            "description": "Predicted values for the next 20 steps"
+          },
+          "fitted": {
+            "type": "array",
+            "items": {
+              "type": "number",
+              "format": "double"
+            },
+            "description": "Fitted values from the model"
+          },
+          "stats": {
+            "$ref": "#/components/schemas/Statistics"
+          },
+          "level": {
+            "type": "array",
+            "items": {
+              "type": "number",
+              "format": "double"
+            },
+            "description": "Level component of the time series"
+          },
+          "slope": {
+            "type": "array",
+            "items": {
+              "type": "number",
+              "format": "double"
+            },
+            "description": "Slope component of the time series"
+          },
+          "trend": {
+            "type": "array",
+            "items": {
+              "type": "number",
+              "format": "double"
+            },
+            "description": "Trend component (level + slope)"
+          },
+          "seasonal_week": {
+            "type": "array",
+            "items": {
+              "type": "number",
+              "format": "double"
+            },
+            "description": "Weekly seasonal component"
+          },
+          "seasonal_month": {
+            "type": "array",
+            "items": {
+              "type": "number",
+              "format": "double"
+            },
+            "description": "Monthly seasonal component (only present if data has more than 40 points)"
+          }
+        }
+      },
+      "Statistics": {
+        "type": "object",
+        "properties": {
+          "mean": {
+            "type": "number",
+            "format": "double",
+            "description": "Mean of the price values"
+          },
+          "std": {
+            "type": "number",
+            "format": "double",
+            "description": "Standard deviation of the price values"
+          },
+          "max": {
+            "type": "number",
+            "format": "double",
+            "description": "Maximum price value"
+          },
+          "min": {
+            "type": "number",
+            "format": "double",
+            "description": "Minimum price value"
+          },
+          "return": {
+            "type": "number",
+            "format": "double",
+            "description": "Percentage return from first to last price"
+          },
+          "swmax": {
+            "type": "number",
+            "format": "double",
+            "description": "Weekly seasonal maximum range"
+          },
+          "swmaxd": {
+            "type": "integer",
+            "description": "Day index of weekly seasonal maximum"
+          },
+          "swmind": {
+            "type": "integer",
+            "description": "Day index of weekly seasonal minimum"
+          },
+          "smmax": {
+            "type": "number",
+            "format": "double",
+            "description": "Monthly seasonal maximum range (only present if data has more than 40 points)"
+          },
+          "smmaxd": {
+            "type": "integer",
+            "description": "Day index of monthly seasonal maximum (only present if data has more than 40 points)"
+          },
+          "smmind": {
+            "type": "integer",
+            "description": "Day index of monthly seasonal minimum (only present if data has more than 40 points)"
+          }
+        }
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": false
+          },
+          "message": {
+            "type": "string",
+            "description": "Error message describing what went wrong"
+          }
+        }
+      }
+    }
+  },
+  "tags": [
+    {
+      "name": "Analytics",
+      "description": "Analytics endpoints for data analysis"
+    }
+  ]
+}
+
