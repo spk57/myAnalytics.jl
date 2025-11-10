@@ -7,7 +7,8 @@ using JSON
 include("api/getssl.jl")
 
 route("/*") do
-    throw(HTTP.StatusError(404, "myAnalytics endpoint Not Found"))
+    Genie.Renderer.setstatuscode(404)
+    json(Dict(:error => "myAnalytics endpoint Not Found"))
 end
 
 route("/") do
