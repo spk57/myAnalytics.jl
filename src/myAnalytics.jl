@@ -7,7 +7,6 @@ using JSON
 include("api/getssl.jl")
 
 route("/*") do
-    Genie.Renderer.setstatuscode(404)
     json(Dict(:error => "myAnalytics endpoint Not Found"))
 end
 
@@ -59,15 +58,34 @@ route("/api/getssl", method = POST) do
         # Call getssl function
         result = getssl(prices)
         
+        # Check if getssl returned an error (insufficient data points)
+        if haskey(result, :success) && result[:success] == false
+            Genie.Renderer.setstatuscode(500)
+            # Check if it's the insufficient data points error
+            if occursin("Insufficient data points", result[:message])
+                return json(Dict(:success => false, :message => "Insufficient number of data points"))
+            else
+                return json(Dict(:success => false, :message => result[:message]))
+            end
+        end
+        
         # Return result as JSON
         return json(result)
     catch e
         Genie.Renderer.setstatuscode(500)
-        return json(Dict(:success => false, :message => "Error processing request: $(sprint(showerror, e))"))
+        # Check if it's the insufficient data points error
+        error_msg = sprint(showerror, e)
+        if occursin("Insufficient data points", error_msg)
+            return json(Dict(:success => false, :message => "Insufficient number of data points"))
+        else
+            return json(Dict(:success => false, :message => "Error processing request: Unknown error"))
+        end
     end
 end
 
 r=routes()
 println("Routes: $r")
-up(8001, async = false)
+port = parse(Int, get(ENV, "PORT", "8001"))
+println("Starting server on port $port")
+up(port, async = false)
 end
