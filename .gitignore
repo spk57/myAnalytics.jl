@@ -15,9 +15,11 @@
 *.swp
 *.swo
 *~
-#Test logging
-test/runtests.log
 
 # OS
 .DS_Store
 Thumbs.db
+
+# Logs
+*.log
+test/runtests.log
