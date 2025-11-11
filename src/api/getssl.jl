@@ -9,16 +9,21 @@ function findminmax(v)
     rng=max[1]-min[1]
     return (min=min,max=max, rng=rng)
 end
-
+const minpoints=10 # minimum number of data points for analysis
 function getssl(prices)
     try
         # Convert input to a Julia Vector{Float64} if it's not already
         prices_jl = convert(Vector{Float64}, prices)
 
         len=length(prices_jl)
-        if len < 10
-            error("Insufficient data points for analysis. Need at least 10, got $(length(prices_jl))")
+        if len < minpoints
+            result = Dict{Symbol,Any}(
+                :success => false,
+                :message => "Insufficient data points for analysis. Need at least $minpoints, got $(length(prices_jl))",
+            )        
+            return result
         end
+
         monthlyAnalysis=false
         # Create the model with explicit parameter names
         # The component parameters expect string values indicating the model type
