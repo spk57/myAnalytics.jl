@@ -15,6 +15,32 @@
     }
   ],
   "paths": {
+    "/health": {
+      "get": {
+        "summary": "Health Check",
+        "description": "Returns the health status of the API server, including uptime and version information.",
+        "tags": ["Monitoring"],
+        "responses": {
+          "200": {
+            "description": "Server is healthy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthResponse"
+                },
+                "example": {
+                  "status": "healthy",
+                  "timestamp": "2025-11-12T10:30:00.123",
+                  "version": "1.0.0",
+                  "uptime_seconds": 3600,
+                  "service": "myAnalytics.jl"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/getssl": {
       "post": {
         "summary": "Structural State Space Learning Analysis",
@@ -230,6 +256,33 @@
             "description": "Error message describing what went wrong"
           }
         }
+      },
+      "HealthResponse": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": ["healthy", "unhealthy"],
+            "description": "Overall health status of the service"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Current server timestamp"
+          },
+          "version": {
+            "type": "string",
+            "description": "API version"
+          },
+          "uptime_seconds": {
+            "type": "integer",
+            "description": "Server uptime in seconds since start"
+          },
+          "service": {
+            "type": "string",
+            "description": "Service name"
+          }
+        }
       }
     }
   },
@@ -237,6 +290,10 @@
     {
       "name": "Analytics",
       "description": "Analytics endpoints for data analysis"
+    },
+    {
+      "name": "Monitoring",
+      "description": "Health check and monitoring endpoints"
     }
   ]
 }

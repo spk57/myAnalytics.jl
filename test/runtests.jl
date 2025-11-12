@@ -151,6 +151,24 @@ try
     test_start_time = time()
     @testset "API Endpoints Tests" begin
         
+        @testset "Health Check endpoint" begin
+            @testset "Testing /health" begin
+                @info "Testing GET /health"
+                r = HTTP.request("GET", "$API_URL/health")
+                @test r.status == 200
+                
+                response_body = JSON.parse(String(r.body))
+                @test haskey(response_body, "status")
+                @test response_body["status"] == "healthy"
+                @test haskey(response_body, "timestamp")
+                @test haskey(response_body, "version")
+                @test haskey(response_body, "uptime_seconds")
+                @test haskey(response_body, "service")
+                @test response_body["service"] == "myAnalytics.jl"
+                @info "✓ GET /health - Status: healthy, Version: $(response_body["version"]), Uptime: $(response_body["uptime_seconds"])s"
+            end
+        end
+        
         @testset "Successful GET endpoints" begin
             paths = ["/", "/swagger.json", "/docs"]
             

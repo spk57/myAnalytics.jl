@@ -57,6 +57,25 @@ PORT=8080 julia --project src/myAnalytics.jl
 
 ## API Endpoints
 
+### Health Check
+```http
+GET /health
+```
+Returns the health status of the API server.
+
+**Response:**
+```json
+{
+  "status": "healthy",
+  "timestamp": "2025-11-12T10:30:00.123",
+  "version": "1.0.0",
+  "uptime_seconds": 3600,
+  "service": "myAnalytics.jl"
+}
+```
+
+Use this endpoint for monitoring, health checks, and load balancer probes.
+
 ### Root Endpoint
 ```http
 GET /

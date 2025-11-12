@@ -2,6 +2,7 @@
 module myAnalytics
 using Genie, Genie.Renderer, Genie.Renderer.Html, Genie.Renderer.Json
 using JSON
+using Dates
 
 # Include API endpoints
 include("api/getssl.jl")
@@ -41,6 +42,24 @@ route("/api-docs") do
     Genie.Responses.setstatus(302)
     Genie.Responses.setheaders(Dict("Location" => "/docs"))
     ""
+end
+
+# Health check endpoint
+const SERVER_START_TIME = now()
+const API_VERSION = "1.0.0"
+
+route("/health") do
+    uptime_seconds = round(Int, (now() - SERVER_START_TIME).value / 1000)
+    
+    health_data = Dict(
+        :status => "healthy",
+        :timestamp => now(),
+        :version => API_VERSION,
+        :uptime_seconds => uptime_seconds,
+        :service => "myAnalytics.jl"
+    )
+    
+    json(health_data)
 end
 
 route("/api/getssl", method = POST) do
