@@ -1,15 +1,14 @@
 # myAnalytics.jl
 
-A production-ready REST API for analytics operations built with Julia and Genie.jl, featuring structural state space learning analysis for time series data.
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
+A REST API for analytics operations built with Julia and Genie.jl, featuring 
+- Structural state space learning analysis for time series data.
 
 ## Features
 
-- 🚀 **Fast & Efficient**: Built on Julia for high-performance numerical computing
 - 📊 **Time Series Analysis**: Structural state space learning using StateSpaceLearning.jl
-- 🔒 **Secure**: Built-in error handling and data validation
 - 📖 **Interactive Documentation**: Swagger UI for easy API exploration
-- ✅ **Well-Tested**: Comprehensive test suite with automated server management
-- 🔧 **Easy Deployment**: Simple configuration via environment variables
 
 ## Quick Start
 
@@ -285,14 +284,6 @@ route("/api/myendpoint", method = POST) do
 end
 ```
 
-### Logging
-
-The test suite uses a dual logger that writes to both console and file:
-- Console output for real-time monitoring
-- File output (`test/runtests.log`) for later analysis
-- Timestamps for test sessions
-- Detailed test execution information
-
 ## Error Handling
 
 The API uses consistent error response format:
@@ -336,7 +327,7 @@ Common error scenarios:
 
 ## License
 
-[Your license here]
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ## Contributing
 
