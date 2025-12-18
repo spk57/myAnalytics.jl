@@ -28,5 +28,5 @@ echo "Press Ctrl+C to stop the server"
 echo ""
 
 # Start the server
-julia src/myAnalytics.jl
+julia --project src/myAnalytics.jl
 
