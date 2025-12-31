@@ -68,7 +68,7 @@ Returns the health status of the API server.
 {
   "status": "healthy",
   "timestamp": "2025-11-12T10:30:00.123",
-  "version": "1.0.0",
+  "version": "0.0.1",
   "uptime_seconds": 3600,
   "service": "myAnalytics.jl"
 }

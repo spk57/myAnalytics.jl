@@ -253,7 +253,7 @@ route("/health") do
     json(Dict(
         :status => "ok",
         :timestamp => now(),
-        :version => "1.0.0"
+        :version => "0.0.1"
     ))
 end
 ```

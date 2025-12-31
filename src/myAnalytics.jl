@@ -46,7 +46,7 @@ end
 
 # Health check endpoint
 const SERVER_START_TIME = now()
-const API_VERSION = "1.0.0"
+const API_VERSION = "0.0.1"
 
 route("/health") do
     uptime_seconds = round(Int, (now() - SERVER_START_TIME).value / 1000)
