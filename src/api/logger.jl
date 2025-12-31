@@ -1,16 +1,35 @@
 # logger.jl - API endpoint for logging data entries
 using Dates
 using JSON
+using CSV
+using DataFrames
 
-# In-memory storage for logged entries (for development/demo)
-# In production, you would store this in a database
-const LOG_ENTRIES = Vector{Dict{Symbol,Any}}()
+# CSV file path for persistent storage
+const LOG_FILE = joinpath(@__DIR__, "..", "..", "logger.csv")
 const LOG_LOCK = ReentrantLock()
+
+# Initialize CSV file if it doesn't exist
+function init_log_file()
+    if !isfile(LOG_FILE)
+        df = DataFrame(
+            id = Int[],
+            datetime = DateTime[],
+            name = String[],
+            value = Any[],
+            source = String[],
+            created_at = DateTime[]
+        )
+        CSV.write(LOG_FILE, df)
+    end
+end
+
+# Initialize on module load
+init_log_file()
 
 """
     add_log_entry(datetime, name, value, source)
 
-Add a log entry to the system.
+Add a log entry to the system and persist to CSV file.
 
 # Arguments
 - `datetime::DateTime`: Timestamp of the log entry
@@ -22,30 +41,36 @@ Add a log entry to the system.
 Dict with success status and entry ID
 """
 function add_log_entry(datetime::DateTime, name::String, value::Any, source::String)
-    entry = Dict{Symbol,Any}(
-        :id => length(LOG_ENTRIES) + 1,
-        :datetime => datetime,
-        :name => name,
-        :value => value,
-        :source => source,
-        :created_at => now()
-    )
-    
     lock(LOG_LOCK) do
-        push!(LOG_ENTRIES, entry)
+        # Read current entries to get next ID
+        df = CSV.read(LOG_FILE, DataFrame)
+        next_id = isempty(df) ? 1 : maximum(df.id) + 1
+        
+        # Create new entry
+        new_entry = DataFrame(
+            id = [next_id],
+            datetime = [datetime],
+            name = [name],
+            value = [value],
+            source = [source],
+            created_at = [now()]
+        )
+        
+        # Append to CSV file
+        CSV.write(LOG_FILE, new_entry, append=true)
+        
+        return Dict(
+            :success => true,
+            :message => "Log entry created successfully",
+            :id => next_id
+        )
     end
-    
-    return Dict(
-        :success => true,
-        :message => "Log entry created successfully",
-        :id => entry[:id]
-    )
 end
 
 """
     get_log_entries(; limit=100, offset=0, source=nothing, name=nothing)
 
-Retrieve log entries with optional filtering.
+Retrieve log entries from CSV file with optional filtering.
 
 # Arguments
 - `limit::Int`: Maximum number of entries to return (default: 100)
@@ -58,27 +83,46 @@ Dict with entries array and metadata
 """
 function get_log_entries(; limit::Int=100, offset::Int=0, source::Union{String,Nothing}=nothing, name::Union{String,Nothing}=nothing)
     lock(LOG_LOCK) do
-        filtered_entries = LOG_ENTRIES
+        # Read from CSV file
+        df = CSV.read(LOG_FILE, DataFrame)
         
         # Apply filters
         if !isnothing(source)
-            filtered_entries = filter(e -> e[:source] == source, filtered_entries)
+            df = filter(row -> row.source == source, df)
         end
         
         if !isnothing(name)
-            filtered_entries = filter(e -> e[:name] == name, filtered_entries)
+            df = filter(row -> row.name == name, df)
         end
         
+        # Get total before pagination
+        total = nrow(df)
+        
         # Apply pagination
-        total = length(filtered_entries)
         start_idx = offset + 1
         end_idx = min(offset + limit, total)
         
-        paginated_entries = start_idx <= total ? filtered_entries[start_idx:end_idx] : []
+        if start_idx <= total
+            paginated_df = df[start_idx:end_idx, :]
+            # Convert DataFrame rows to Dict entries
+            entries = [
+                Dict(
+                    :id => row.id,
+                    :datetime => row.datetime,
+                    :name => row.name,
+                    :value => row.value,
+                    :source => row.source,
+                    :created_at => row.created_at
+                )
+                for row in eachrow(paginated_df)
+            ]
+        else
+            entries = []
+        end
         
         return Dict(
             :success => true,
-            :entries => paginated_entries,
+            :entries => entries,
             :total => total,
             :limit => limit,
             :offset => offset
@@ -89,11 +133,20 @@ end
 """
     clear_log_entries()
 
-Clear all log entries (for testing purposes).
+Clear all log entries from CSV file (for testing purposes).
 """
 function clear_log_entries()
     lock(LOG_LOCK) do
-        empty!(LOG_ENTRIES)
+        # Reinitialize empty CSV file
+        df = DataFrame(
+            id = Int[],
+            datetime = DateTime[],
+            name = String[],
+            value = Any[],
+            source = String[],
+            created_at = DateTime[]
+        )
+        CSV.write(LOG_FILE, df)
     end
     return Dict(
         :success => true,
@@ -104,31 +157,35 @@ end
 """
     get_log_stats()
 
-Get statistics about logged entries.
+Get statistics about logged entries from CSV file.
 """
 function get_log_stats()
     lock(LOG_LOCK) do
-        total = length(LOG_ENTRIES)
+        # Read from CSV file
+        df = CSV.read(LOG_FILE, DataFrame)
+        total = nrow(df)
         
         if total == 0
             return Dict(
                 :success => true,
                 :total_entries => 0,
                 :unique_sources => 0,
-                :unique_names => 0
+                :unique_names => 0,
+                :sources => [],
+                :names => []
             )
         end
         
-        sources = Set(e[:source] for e in LOG_ENTRIES)
-        names = Set(e[:name] for e in LOG_ENTRIES)
+        sources = unique(df.source)
+        names = unique(df.name)
         
         return Dict(
             :success => true,
             :total_entries => total,
             :unique_sources => length(sources),
             :unique_names => length(names),
-            :sources => collect(sources),
-            :names => collect(names)
+            :sources => sources,
+            :names => names
         )
     end
 end

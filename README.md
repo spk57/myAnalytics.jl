@@ -112,6 +112,8 @@ Retrieve log entries with optional filtering and pagination.
 #### GET /api/logger/stats
 Get statistics about logged entries (total count, unique sources/names).
 
+**Data Storage:** Log entries are persisted to `logger.csv` in the project root directory.
+
 **See [Logger API Documentation](docs/LOGGER_API.md) for detailed examples and usage.**
 
 ### Root Endpoint

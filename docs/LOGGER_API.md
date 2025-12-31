@@ -328,17 +328,32 @@ println("Found $(entries["total"]) entries")
 
 ## Data Storage
 
-**Note:** The current implementation stores log entries in memory. This means:
-- ✅ Fast access and retrieval
-- ✅ No database setup required
-- ⚠️ Data is lost when server restarts
-- ⚠️ Limited by available RAM
+The logger stores data persistently in a CSV file (`logger.csv`) located in the project root directory.
 
-For production use, consider implementing persistent storage using:
-- PostgreSQL
-- SQLite
-- MongoDB
-- Time-series databases (InfluxDB, TimescaleDB)
+**Benefits:**
+- ✅ **Persistent**: Data survives server restarts
+- ✅ **Simple**: No database setup required
+- ✅ **Portable**: Easy to backup, transfer, or analyze
+- ✅ **Human-readable**: Can be opened in Excel, pandas, etc.
+- ✅ **Thread-safe**: Concurrent access protected with locks
+
+**CSV File Structure:**
+```csv
+id,datetime,name,value,source,created_at
+1,2025-01-01T10:30:00,temperature,23.5,sensor-01,2025-01-01T10:30:05
+2,2025-01-01T10:31:00,humidity,65.2,sensor-01,2025-01-01T10:31:03
+```
+
+**Considerations:**
+- Suitable for small to medium datasets (thousands to hundreds of thousands of entries)
+- For very large datasets or high-frequency logging, consider a database
+- CSV file grows over time - implement data retention/archival as needed
+- Backup the `logger.csv` file regularly
+
+**For production with high volume**, consider migrating to:
+- PostgreSQL (relational database)
+- InfluxDB or TimescaleDB (time-series optimized)
+- SQLite (embedded database)
 
 ---
 
