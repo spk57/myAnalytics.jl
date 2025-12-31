@@ -41,6 +41,123 @@
         }
       }
     },
+    "/api/logger": {
+      "post": {
+        "summary": "Create Log Entry",
+        "description": "Creates a new log entry with datetime, name, value, and source information.",
+        "tags": ["Logging"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LogEntryRequest"
+              },
+              "example": {
+                "datetime": "2025-01-01T10:30:00",
+                "name": "temperature",
+                "value": 23.5,
+                "source": "sensor-01"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Log entry created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LogEntryResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request - missing required fields or invalid format",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "summary": "Retrieve Log Entries",
+        "description": "Retrieves log entries with optional filtering and pagination.",
+        "tags": ["Logging"],
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Maximum number of entries to return",
+            "schema": {
+              "type": "integer",
+              "default": 100
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "description": "Number of entries to skip",
+            "schema": {
+              "type": "integer",
+              "default": 0
+            }
+          },
+          {
+            "name": "source",
+            "in": "query",
+            "description": "Filter by source",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "name",
+            "in": "query",
+            "description": "Filter by name",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Log entries retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LogEntriesResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/logger/stats": {
+      "get": {
+        "summary": "Get Logger Statistics",
+        "description": "Returns statistics about logged entries including total count and unique sources/names.",
+        "tags": ["Logging"],
+        "responses": {
+          "200": {
+            "description": "Statistics retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LogStatsResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/getssl": {
       "post": {
         "summary": "Structural State Space Learning Analysis",
@@ -283,6 +400,146 @@
             "description": "Service name"
           }
         }
+      },
+      "LogEntryRequest": {
+        "type": "object",
+        "required": ["datetime", "name", "value", "source"],
+        "properties": {
+          "datetime": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Timestamp of the log entry (ISO 8601 format)",
+            "example": "2025-01-01T10:30:00"
+          },
+          "name": {
+            "type": "string",
+            "description": "Name/identifier of the log entry",
+            "example": "temperature"
+          },
+          "value": {
+            "description": "Value to be logged (can be number, string, boolean, etc.)",
+            "oneOf": [
+              {"type": "number"},
+              {"type": "string"},
+              {"type": "boolean"}
+            ],
+            "example": 23.5
+          },
+          "source": {
+            "type": "string",
+            "description": "Source/origin of the log entry",
+            "example": "sensor-01"
+          }
+        }
+      },
+      "LogEntryResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": true
+          },
+          "message": {
+            "type": "string",
+            "example": "Log entry created successfully"
+          },
+          "id": {
+            "type": "integer",
+            "description": "ID of the created log entry"
+          }
+        }
+      },
+      "LogEntriesResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": true
+          },
+          "entries": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LogEntry"
+            }
+          },
+          "total": {
+            "type": "integer",
+            "description": "Total number of entries matching the filter"
+          },
+          "limit": {
+            "type": "integer",
+            "description": "Maximum number of entries returned"
+          },
+          "offset": {
+            "type": "integer",
+            "description": "Number of entries skipped"
+          }
+        }
+      },
+      "LogEntry": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "description": "Unique entry ID"
+          },
+          "datetime": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Timestamp of the log entry"
+          },
+          "name": {
+            "type": "string",
+            "description": "Name/identifier"
+          },
+          "value": {
+            "description": "Logged value"
+          },
+          "source": {
+            "type": "string",
+            "description": "Source/origin"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "When the entry was created in the system"
+          }
+        }
+      },
+      "LogStatsResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": true
+          },
+          "total_entries": {
+            "type": "integer",
+            "description": "Total number of log entries"
+          },
+          "unique_sources": {
+            "type": "integer",
+            "description": "Number of unique sources"
+          },
+          "unique_names": {
+            "type": "integer",
+            "description": "Number of unique names"
+          },
+          "sources": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "List of unique sources"
+          },
+          "names": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "List of unique names"
+          }
+        }
       }
     }
   },
@@ -290,6 +547,10 @@
     {
       "name": "Analytics",
       "description": "Analytics endpoints for data analysis"
+    },
+    {
+      "name": "Logging",
+      "description": "Data logging and retrieval endpoints"
     },
     {
       "name": "Monitoring",

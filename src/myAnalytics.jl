@@ -6,6 +6,7 @@ using Dates
 
 # Include API endpoints
 include("api/getssl.jl")
+include("api/logger.jl")
 
 route("/*") do
     json(Dict(:error => "myAnalytics endpoint Not Found"))
@@ -97,6 +98,68 @@ route("/api/getssl", method = POST) do
         else
             return json(Dict(:success => false, :message => "Error processing request: Unknown error"))
         end
+    end
+end
+
+# Logger endpoints
+route("/api/logger", method = POST) do
+    try
+        request_data = Genie.Requests.jsonpayload()
+        
+        # Validate required fields
+        required_fields = ["datetime", "name", "value", "source"]
+        for field in required_fields
+            if !haskey(request_data, field)
+                return json(Dict(:success => false, :message => "Missing required field: $field"))
+            end
+        end
+        
+        # Parse datetime
+        datetime_str = request_data["datetime"]
+        datetime = DateTime(datetime_str)
+        
+        # Add log entry
+        result = add_log_entry(
+            datetime,
+            string(request_data["name"]),
+            request_data["value"],
+            string(request_data["source"])
+        )
+        
+        return json(result)
+    catch e
+        error_msg = sprint(showerror, e)
+        if occursin("ArgumentError", error_msg) && occursin("DateTime", error_msg)
+            return json(Dict(:success => false, :message => "Invalid datetime format. Use ISO 8601 format (e.g., 2025-01-01T10:30:00)"))
+        else
+            return json(Dict(:success => false, :message => "Error processing request: $(sprint(showerror, e))"))
+        end
+    end
+end
+
+route("/api/logger", method = GET) do
+    try
+        # Get query parameters
+        params = Genie.Requests.getpayload()
+        
+        limit = haskey(params, :limit) ? parse(Int, params[:limit]) : 100
+        offset = haskey(params, :offset) ? parse(Int, params[:offset]) : 0
+        source = haskey(params, :source) ? string(params[:source]) : nothing
+        name = haskey(params, :name) ? string(params[:name]) : nothing
+        
+        result = get_log_entries(limit=limit, offset=offset, source=source, name=name)
+        return json(result)
+    catch e
+        return json(Dict(:success => false, :message => "Error retrieving log entries: $(sprint(showerror, e))"))
+    end
+end
+
+route("/api/logger/stats", method = GET) do
+    try
+        result = get_log_stats()
+        return json(result)
+    catch e
+        return json(Dict(:success => false, :message => "Error retrieving stats: $(sprint(showerror, e))"))
     end
 end
 
