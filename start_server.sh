@@ -21,7 +21,9 @@ if ! command -v julia &> /dev/null; then
 fi
 
 echo "Starting myAnalytics API server on port $PORT..."
-echo "API will be available at: http://localhost:$PORT"
+echo "API will be available at:"
+echo "  - Local: http://localhost:$PORT"
+echo "  - Network: http://$(hostname -I | awk '{print $1}'):$PORT"
 echo "Swagger documentation: http://localhost:$PORT/docs"
 echo ""
 echo "Press Ctrl+C to stop the server"

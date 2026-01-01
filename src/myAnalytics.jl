@@ -166,6 +166,7 @@ end
 r=routes()
 println("Routes: $r")
 port = parse(Int, get(ENV, "PORT", "8001"))
-println("Starting server on port $port")
-up(port, async = false)
+host = get(ENV, "HOST", "0.0.0.0")
+println("Starting server on $host:$port")
+up(host=host, port=port, async = false)
 end
