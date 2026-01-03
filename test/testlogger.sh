@@ -1,7 +1,13 @@
 #!/bin/bash
 # Test script for Logger API endpoints
-# Usage: ./test/testlogger.sh [API_URL]
-# Default API_URL: http://localhost:8765
+# Usage: ./test/testlogger.sh [IP_ADDRESS_OR_URL] [PORT]
+#   IP_ADDRESS_OR_URL: IP address (e.g., 192.168.1.100) or full URL (e.g., http://192.168.1.100:8765)
+#   PORT: Port number (default: 8765, only used if first param is an IP address)
+# Examples:
+#   ./test/testlogger.sh                           # Uses http://localhost:8765
+#   ./test/testlogger.sh 192.168.1.100             # Uses http://192.168.1.100:8765
+#   ./test/testlogger.sh 192.168.1.100 8080        # Uses http://192.168.1.100:8080
+#   ./test/testlogger.sh http://192.168.1.100:8765 # Uses the provided URL as-is
 
 set -e
 
@@ -13,7 +19,22 @@ BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
 # Configuration
-API_URL="${1:-http://localhost:8765}"
+DEFAULT_PORT=8765
+PARAM1="${1:-localhost}"
+PARAM2="${2:-$DEFAULT_PORT}"
+
+# Determine API_URL from parameters
+if [[ "$PARAM1" == http://* ]] || [[ "$PARAM1" == https://* ]]; then
+    # Full URL provided, use it as-is
+    API_URL="$PARAM1"
+elif [[ "$PARAM1" == localhost ]] || [[ "$PARAM1" =~ ^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$ ]]; then
+    # IP address or localhost provided, construct URL
+    API_URL="http://${PARAM1}:${PARAM2}"
+else
+    # Assume it's a hostname or use as-is
+    API_URL="http://${PARAM1}:${PARAM2}"
+fi
+
 LOGGER_ENDPOINT="${API_URL}/api/logger"
 STATS_ENDPOINT="${API_URL}/api/logger/stats"
 
