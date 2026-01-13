@@ -175,3 +175,37 @@ Data is stored in CSV format with the following columns:
 | value | Measured value |
 | source | Device identifier |
 | created_at | When the entry was created on the server |
+
+## Troubleshooting Remote Connections
+
+If local `curl` commands work but remote Arduino clients cannot connect:
+
+### Quick Diagnostic
+
+Run the network diagnostic script:
+```bash
+./check_network.sh
+```
+
+This will check:
+- Server process status
+- Network binding (should be `0.0.0.0:8765`, not `127.0.0.1:8765`)
+- Server IP addresses
+- Firewall configuration
+- Local connectivity
+
+### Common Issues
+
+1. **Firewall blocking port 8765**
+   - Linux (firewalld): `sudo firewall-cmd --permanent --add-port=8765/tcp && sudo firewall-cmd --reload`
+   - Linux (ufw): `sudo ufw allow 8765/tcp`
+
+2. **Arduino using wrong URL**
+   - ❌ `http://localhost:8765/log` (won't work remotely)
+   - ✅ `http://192.168.1.100:8765/log` (use actual server IP)
+
+3. **Server not binding to all interfaces**
+   - The server binds to `0.0.0.0` by default
+   - Explicitly set: `HOST=0.0.0.0 ./logger-server`
+
+See [TROUBLESHOOTING.md](TROUBLESHOOTING.md) for detailed troubleshooting steps.

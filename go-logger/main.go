@@ -496,7 +496,13 @@ func main() {
 	http.HandleFunc("/quick", server.handleQuickLog)
 	http.HandleFunc("/health", server.handleHealth)
 
-	fmt.Printf("🚀 Go Logger API Server starting on port %s\n", port)
+	// Get local IP addresses for remote access info
+	host := os.Getenv("HOST")
+	if host == "" {
+		host = "0.0.0.0" // Bind to all interfaces by default
+	}
+
+	fmt.Printf("🚀 Go Logger API Server starting on %s:%s\n", host, port)
 	fmt.Println("Endpoints:")
 	fmt.Println("  POST   /log          - Add a log entry (JSON body or query params)")
 	fmt.Println("  GET    /log          - Get log entries (with ?limit, ?offset, ?source, ?name filters)")
@@ -504,7 +510,18 @@ func main() {
 	fmt.Println("  GET    /stats        - Get log statistics")
 	fmt.Println("  GET    /quick        - Quick log entry (query params: name, value, source)")
 	fmt.Println("  GET    /health       - Health check")
-	fmt.Printf("\nArduino example: GET http://host:%s/quick?name=temp&value=25.5&source=arduino-1\n\n", port)
+	
+	// Display network information for remote access
+	if host == "0.0.0.0" || host == "" {
+		fmt.Println("\n📡 Server is listening on all network interfaces")
+		fmt.Println("   Local access:  http://localhost:" + port)
+		fmt.Println("   Remote access:  http://<your-ip>:" + port)
+		fmt.Println("   Use 'ip addr' or 'hostname -I' to find your IP address")
+	} else {
+		fmt.Printf("\n📡 Server is listening on %s:%s\n", host, port)
+	}
+	fmt.Printf("\nArduino example: GET http://<server-ip>:%s/quick?name=temp&value=25.5&source=arduino-1\n\n", port)
 
-	log.Fatal(http.ListenAndServe(":"+port, nil))
+	addr := host + ":" + port
+	log.Fatal(http.ListenAndServe(addr, nil))
 }
