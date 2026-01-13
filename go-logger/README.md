@@ -20,7 +20,7 @@ go build -o logger-server .
 ## Running
 
 ```bash
-# Default port 8080
+# Default port 8765
 ./logger-server
 
 # Custom port
@@ -36,14 +36,14 @@ LOG_FILE=/path/to/logs.csv ./logger-server
 
 **POST /log** (JSON body)
 ```bash
-curl -X POST http://localhost:8080/log \
+curl -X POST http://localhost:8765/log \
   -H "Content-Type: application/json" \
   -d '{"name":"temperature","value":"23.5","source":"arduino-1"}'
 ```
 
 **GET /quick** (Query parameters - Arduino friendly)
 ```bash
-curl "http://localhost:8080/quick?name=temperature&value=23.5&source=arduino-1"
+curl "http://localhost:8765/quick?name=temperature&value=23.5&source=arduino-1"
 ```
 
 Response:
@@ -67,10 +67,10 @@ Query parameters:
 
 ```bash
 # Get all entries
-curl http://localhost:8080/log
+curl http://localhost:8765/log
 
 # Filter by source
-curl "http://localhost:8080/log?source=arduino-1&limit=50"
+curl "http://localhost:8765/log?source=arduino-1&limit=50"
 ```
 
 Response:
@@ -98,7 +98,7 @@ Response:
 **GET /stats**
 
 ```bash
-curl http://localhost:8080/stats
+curl http://localhost:8765/stats
 ```
 
 Response:
@@ -118,7 +118,7 @@ Response:
 **DELETE /log**
 
 ```bash
-curl -X DELETE http://localhost:8080/log
+curl -X DELETE http://localhost:8765/log
 ```
 
 ### Health Check
@@ -126,7 +126,7 @@ curl -X DELETE http://localhost:8080/log
 **GET /health**
 
 ```bash
-curl http://localhost:8080/health
+curl http://localhost:8765/health
 ```
 
 ## Arduino Example (ESP8266/ESP32)
@@ -135,7 +135,7 @@ curl http://localhost:8080/health
 #include <WiFi.h>
 #include <HTTPClient.h>
 
-const char* serverUrl = "http://192.168.1.100:8080/quick";
+const char* serverUrl = "http://192.168.1.100:8765/quick";
 
 void logValue(const char* name, float value, const char* source) {
   if (WiFi.status() == WL_CONNECTED) {
