@@ -250,10 +250,10 @@ func NewServer(logger *Logger) *Server {
 
 // AddLogRequest is the request body for adding a log entry
 type AddLogRequest struct {
-	Datetime string `json:"datetime"` // RFC3339 format, or empty for current time
-	Name     string `json:"name"`
-	Value    string `json:"value"`
-	Source   string `json:"source"`
+	Datetime string      `json:"datetime"` // RFC3339 format, or empty for current time
+	Name     string      `json:"name"`
+	Value    interface{} `json:"value"` // accepts string, number, or other JSON types
+	Source   string      `json:"source"`
 }
 
 // enableCORS adds CORS headers to allow Arduino/ESP requests
@@ -337,7 +337,22 @@ func (s *Server) addLogEntry(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	id, err := s.logger.AddEntry(dt, req.Name, req.Value, req.Source)
+	// Convert value to string for storage
+	var valueStr string
+	switch v := req.Value.(type) {
+	case string:
+		valueStr = v
+	case float64:
+		valueStr = strconv.FormatFloat(v, 'f', -1, 64)
+	case int:
+		valueStr = strconv.Itoa(v)
+	case nil:
+		valueStr = ""
+	default:
+		valueStr = fmt.Sprintf("%v", v)
+	}
+
+	id, err := s.logger.AddEntry(dt, req.Name, valueStr, req.Source)
 	if err != nil {
 		json.NewEncoder(w).Encode(map[string]interface{}{
 			"success": false,
