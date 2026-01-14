@@ -304,28 +304,37 @@ func (s *Server) addLogEntry(w http.ResponseWriter, r *http.Request) {
 		req.Datetime = r.URL.Query().Get("datetime")
 	}
 
-	if req.Name == "" {
+	// Validate required fields
+	if req.Datetime == "" {
 		json.NewEncoder(w).Encode(map[string]interface{}{
 			"success": false,
-			"message": "name is required",
+			"message": "missing required field: datetime",
 		})
 		return
 	}
 
-	// Parse datetime or use current time
+	if req.Name == "" {
+		json.NewEncoder(w).Encode(map[string]interface{}{
+			"success": false,
+			"message": "missing required field: name",
+		})
+		return
+	}
+
+	// Parse datetime
 	var dt time.Time
-	if req.Datetime != "" {
-		var err error
-		dt, err = time.Parse(time.RFC3339, req.Datetime)
+	var err error
+	dt, err = time.Parse(time.RFC3339, req.Datetime)
+	if err != nil {
+		// Try simpler format
+		dt, err = time.Parse("2006-01-02T15:04:05", req.Datetime)
 		if err != nil {
-			// Try simpler format
-			dt, err = time.Parse("2006-01-02T15:04:05", req.Datetime)
-			if err != nil {
-				dt = time.Now()
-			}
+			json.NewEncoder(w).Encode(map[string]interface{}{
+				"success": false,
+				"message": "invalid datetime format, use RFC3339 or YYYY-MM-DDTHH:MM:SS",
+			})
+			return
 		}
-	} else {
-		dt = time.Now()
 	}
 
 	id, err := s.logger.AddEntry(dt, req.Name, req.Value, req.Source)
@@ -492,6 +501,8 @@ func main() {
 
 	http.HandleFunc("/log", server.handleLog)
 	http.HandleFunc("/logs", server.handleLog)
+	http.HandleFunc("/api/logger", server.handleLog)
+	http.HandleFunc("/api/logger/stats", server.handleStats)
 	http.HandleFunc("/stats", server.handleStats)
 	http.HandleFunc("/quick", server.handleQuickLog)
 	http.HandleFunc("/health", server.handleHealth)
@@ -504,12 +515,16 @@ func main() {
 
 	fmt.Printf("🚀 Go Logger API Server starting on %s:%s\n", host, port)
 	fmt.Println("Endpoints:")
-	fmt.Println("  POST   /log          - Add a log entry (JSON body or query params)")
-	fmt.Println("  GET    /log          - Get log entries (with ?limit, ?offset, ?source, ?name filters)")
-	fmt.Println("  DELETE /log          - Clear all log entries")
-	fmt.Println("  GET    /stats        - Get log statistics")
-	fmt.Println("  GET    /quick        - Quick log entry (query params: name, value, source)")
-	fmt.Println("  GET    /health       - Health check")
+	fmt.Println("  POST   /api/logger       - Add a log entry (JSON body)")
+	fmt.Println("  GET    /api/logger       - Get log entries (with ?limit, ?offset, ?source, ?name filters)")
+	fmt.Println("  DELETE /api/logger       - Clear all log entries")
+	fmt.Println("  GET    /api/logger/stats - Get log statistics")
+	fmt.Println("  POST   /log              - Add a log entry (JSON body or query params)")
+	fmt.Println("  GET    /log              - Get log entries (with ?limit, ?offset, ?source, ?name filters)")
+	fmt.Println("  DELETE /log              - Clear all log entries")
+	fmt.Println("  GET    /stats            - Get log statistics")
+	fmt.Println("  GET    /quick            - Quick log entry (query params: name, value, source)")
+	fmt.Println("  GET    /health           - Health check")
 	
 	// Display network information for remote access
 	if host == "0.0.0.0" || host == "" {
