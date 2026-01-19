@@ -55,6 +55,7 @@
               },
               "example": {
                 "datetime": "2025-01-01T10:30:00",
+                "transaction": "logging",
                 "name": "temperature",
                 "value": 23.5,
                 "source": "sensor-01"
@@ -411,6 +412,11 @@
             "description": "Timestamp of the log entry (ISO 8601 format)",
             "example": "2025-01-01T10:30:00"
           },
+          "transaction": {
+            "type": "string",
+            "description": "Transaction identifier",
+            "example": "logging"
+          },
           "name": {
             "type": "string",
             "description": "Name/identifier of the log entry",
@@ -482,6 +488,10 @@
           "id": {
             "type": "integer",
             "description": "Unique entry ID"
+          },
+          "transaction": {
+            "type": "string",
+            "description": "Transaction identifier"
           },
           "datetime": {
             "type": "string",

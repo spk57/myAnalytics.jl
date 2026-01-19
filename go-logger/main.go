@@ -20,12 +20,13 @@ const (
 
 // LogEntry represents a single log entry
 type LogEntry struct {
-	ID        int       `json:"id"`
-	Datetime  time.Time `json:"datetime"`
-	Name      string    `json:"name"`
-	Value     string    `json:"value"`
-	Source    string    `json:"source"`
-	CreatedAt time.Time `json:"created_at"`
+	ID          int       `json:"id"`
+	Transaction string    `json:"transaction"`
+	Datetime    time.Time `json:"datetime"`
+	Name        string    `json:"name"`
+	Value       string    `json:"value"`
+	Source      string    `json:"source"`
+	CreatedAt   time.Time `json:"created_at"`
 }
 
 // Logger handles all log operations with thread safety
@@ -53,7 +54,7 @@ func (l *Logger) initFile() error {
 		defer file.Close()
 
 		writer := csv.NewWriter(file)
-		headers := []string{"id", "datetime", "name", "value", "source", "created_at"}
+		headers := []string{"id", "transaction", "datetime", "name", "value", "source", "created_at"}
 		if err := writer.Write(headers); err != nil {
 			return fmt.Errorf("failed to write headers: %w", err)
 		}
@@ -81,28 +82,29 @@ func (l *Logger) readAllEntries() ([]LogEntry, error) {
 		if i == 0 { // skip header
 			continue
 		}
-		if len(record) < 6 {
+		if len(record) < 7 {
 			continue
 		}
 
 		id, _ := strconv.Atoi(record[0])
-		datetime, _ := time.Parse(time.RFC3339, record[1])
-		createdAt, _ := time.Parse(time.RFC3339, record[5])
+		datetime, _ := time.Parse(time.RFC3339, record[2])
+		createdAt, _ := time.Parse(time.RFC3339, record[6])
 
 		entries = append(entries, LogEntry{
-			ID:        id,
-			Datetime:  datetime,
-			Name:      record[2],
-			Value:     record[3],
-			Source:    record[4],
-			CreatedAt: createdAt,
+			ID:          id,
+			Transaction: record[1],
+			Datetime:    datetime,
+			Name:        record[3],
+			Value:       record[4],
+			Source:      record[5],
+			CreatedAt:   createdAt,
 		})
 	}
 	return entries, nil
 }
 
 // AddEntry adds a new log entry
-func (l *Logger) AddEntry(datetime time.Time, name, value, source string) (int, error) {
+func (l *Logger) AddEntry(datetime time.Time, transaction, name, value, source string) (int, error) {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 
@@ -131,6 +133,7 @@ func (l *Logger) AddEntry(datetime time.Time, name, value, source string) (int, 
 	writer := csv.NewWriter(file)
 	record := []string{
 		strconv.Itoa(nextID),
+		transaction,
 		datetime.Format(time.RFC3339),
 		name,
 		value,
@@ -193,7 +196,7 @@ func (l *Logger) ClearEntries() error {
 	defer file.Close()
 
 	writer := csv.NewWriter(file)
-	headers := []string{"id", "datetime", "name", "value", "source", "created_at"}
+	headers := []string{"id", "transaction", "datetime", "name", "value", "source", "created_at"}
 	if err := writer.Write(headers); err != nil {
 		return err
 	}
@@ -250,10 +253,11 @@ func NewServer(logger *Logger) *Server {
 
 // AddLogRequest is the request body for adding a log entry
 type AddLogRequest struct {
-	Datetime string      `json:"datetime"` // RFC3339 format, or empty for current time
-	Name     string      `json:"name"`
-	Value    interface{} `json:"value"` // accepts string, number, or other JSON types
-	Source   string      `json:"source"`
+	Datetime    string      `json:"datetime"`    // RFC3339 format, or empty for current time
+	Transaction string      `json:"transaction"` // Transaction identifier
+	Name        string      `json:"name"`
+	Value       interface{} `json:"value"` // accepts string, number, or other JSON types
+	Source      string      `json:"source"`
 }
 
 // enableCORS adds CORS headers to allow Arduino/ESP requests
@@ -302,6 +306,7 @@ func (s *Server) addLogEntry(w http.ResponseWriter, r *http.Request) {
 		req.Value = r.URL.Query().Get("value")
 		req.Source = r.URL.Query().Get("source")
 		req.Datetime = r.URL.Query().Get("datetime")
+		req.Transaction = r.URL.Query().Get("transaction")
 	}
 
 	// Validate required fields
@@ -352,7 +357,7 @@ func (s *Server) addLogEntry(w http.ResponseWriter, r *http.Request) {
 		valueStr = fmt.Sprintf("%v", v)
 	}
 
-	id, err := s.logger.AddEntry(dt, req.Name, valueStr, req.Source)
+	id, err := s.logger.AddEntry(dt, req.Transaction, req.Name, valueStr, req.Source)
 	if err != nil {
 		json.NewEncoder(w).Encode(map[string]interface{}{
 			"success": false,
@@ -462,6 +467,7 @@ func (s *Server) handleQuickLog(w http.ResponseWriter, r *http.Request) {
 	name := query.Get("name")
 	value := query.Get("value")
 	source := query.Get("source")
+	transaction := query.Get("transaction")
 
 	if name == "" {
 		json.NewEncoder(w).Encode(map[string]interface{}{
@@ -471,7 +477,7 @@ func (s *Server) handleQuickLog(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	id, err := s.logger.AddEntry(time.Now(), name, value, source)
+	id, err := s.logger.AddEntry(time.Now(), transaction, name, value, source)
 	if err != nil {
 		json.NewEncoder(w).Encode(map[string]interface{}{
 			"success": false,
@@ -540,7 +546,7 @@ func main() {
 	fmt.Println("  GET    /stats            - Get log statistics")
 	fmt.Println("  GET    /quick            - Quick log entry (query params: name, value, source)")
 	fmt.Println("  GET    /health           - Health check")
-	
+
 	// Display network information for remote access
 	if host == "0.0.0.0" || host == "" {
 		fmt.Println("\n📡 Server is listening on all network interfaces")
