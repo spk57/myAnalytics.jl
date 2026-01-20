@@ -27,3 +27,6 @@ test/runtests.log
 # Data files
 logger.csv
 *.png
+
+# Go files
+go-logger/logger-server

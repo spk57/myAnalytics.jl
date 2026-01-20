@@ -152,9 +152,13 @@ route("/api/logger", method = POST) do
         datetime_str = request_data["datetime"]
         datetime = DateTime(datetime_str)
         
+        # Extract transaction (optional field, default to empty string)
+        transaction = haskey(request_data, "transaction") ? string(request_data["transaction"]) : ""
+        
         # Add log entry
         result = add_log_entry(
             datetime,
+            transaction,
             string(request_data["name"]),
             request_data["value"],
             string(request_data["source"])

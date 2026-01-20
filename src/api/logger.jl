@@ -13,6 +13,7 @@ function init_log_file()
     if !isfile(LOG_FILE)
         df = DataFrame(
             id = Int[],
+            transaction = String[],
             datetime = DateTime[],
             name = String[],
             value = Any[],
@@ -27,12 +28,13 @@ end
 init_log_file()
 
 """
-    add_log_entry(datetime, name, value, source)
+    add_log_entry(datetime, transaction, name, value, source)
 
 Add a log entry to the system and persist to CSV file.
 
 # Arguments
 - `datetime::DateTime`: Timestamp of the log entry
+- `transaction::String`: Transaction identifier
 - `name::String`: Name/identifier of the log entry
 - `value::Any`: Value to be logged (can be numeric, string, etc.)
 - `source::String`: Source/origin of the log entry
@@ -40,7 +42,7 @@ Add a log entry to the system and persist to CSV file.
 # Returns
 Dict with success status and entry ID
 """
-function add_log_entry(datetime::DateTime, name::String, value::Any, source::String)
+function add_log_entry(datetime::DateTime, transaction::String, name::String, value::Any, source::String)
     lock(LOG_LOCK) do
         # Read current entries to get next ID
         df = CSV.read(LOG_FILE, DataFrame)
@@ -49,6 +51,7 @@ function add_log_entry(datetime::DateTime, name::String, value::Any, source::Str
         # Create new entry
         new_entry = DataFrame(
             id = [next_id],
+            transaction = [transaction],
             datetime = [datetime],
             name = [name],
             value = [value],
@@ -104,16 +107,27 @@ function get_log_entries(; limit::Int=100, offset::Int=0, source::Union{String,N
         
         if start_idx <= total
             paginated_df = df[start_idx:end_idx, :]
+            # Check if transaction column exists (for backward compatibility)
+            has_transaction = :transaction in names(paginated_df)
             # Convert DataFrame rows to Dict entries
             entries = [
-                Dict(
-                    :id => row.id,
-                    :datetime => row.datetime,
-                    :name => row.name,
-                    :value => row.value,
-                    :source => row.source,
-                    :created_at => row.created_at
-                )
+                begin
+                    entry_dict = Dict(
+                        :id => row.id,
+                        :datetime => row.datetime,
+                        :name => row.name,
+                        :value => row.value,
+                        :source => row.source,
+                        :created_at => row.created_at
+                    )
+                    # Add transaction if column exists
+                    if has_transaction
+                        entry_dict[:transaction] = row.transaction
+                    else
+                        entry_dict[:transaction] = ""
+                    end
+                    entry_dict
+                end
                 for row in eachrow(paginated_df)
             ]
         else
@@ -140,6 +154,7 @@ function clear_log_entries()
         # Reinitialize empty CSV file
         df = DataFrame(
             id = Int[],
+            transaction = String[],
             datetime = DateTime[],
             name = String[],
             value = Any[],
