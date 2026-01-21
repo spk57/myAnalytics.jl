@@ -10,6 +10,9 @@ A lightweight HTTP API server for logging data entries from Arduino and other re
 - CORS enabled for browser/device access
 - Arduino-friendly quick logging endpoint
 
+## TODO 
+ - Split into separate repository from myAnalytics
+ - Add transaction for changing location 
 ## Building
 
 ```bash
