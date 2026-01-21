@@ -46,9 +46,29 @@ function add_log_entry(datetime::DateTime, transaction::String, name::String, va
     lock(LOG_LOCK) do
         # Read current entries to get next ID
         df = CSV.read(LOG_FILE, DataFrame)
+        
+        # Expected column order: id, transaction, datetime, name, value, source, created_at
+        expected_columns = [:id, :transaction, :datetime, :name, :value, :source, :created_at]
+        
+        # Ensure transaction column exists (for backward compatibility)
+        if !(:transaction in names(df))
+            df.transaction = fill("", nrow(df))
+        else
+            # Ensure transaction column is pure String type (handle missing/null values)
+            # Convert any missing or null values to empty strings and ensure type is String
+            df.transaction = String[x === missing || x === nothing ? "" : string(x) for x in df.transaction]
+        end
+        
+        # Ensure columns are in the correct order
+        if names(df) != expected_columns
+            # Reorder to match expected order
+            df = df[:, expected_columns]
+        end
+        
         next_id = isempty(df) ? 1 : maximum(df.id) + 1
         
-        # Create new entry
+        # Create new entry DataFrame with explicit column order matching expected_columns
+        # Use a vector of values in the exact order of expected_columns
         new_entry = DataFrame(
             id = [next_id],
             transaction = [transaction],
@@ -59,8 +79,32 @@ function add_log_entry(datetime::DateTime, transaction::String, name::String, va
             created_at = [now()]
         )
         
-        # Append to CSV file
-        CSV.write(LOG_FILE, new_entry, append=true)
+        # Reorder to match expected_columns order (this ensures consistency)
+        new_entry = new_entry[:, expected_columns]
+        
+        # Ensure transaction column is String type (should already be, but ensure it)
+        if eltype(new_entry.transaction) != String
+            new_entry.transaction = String[string(x) for x in new_entry.transaction]
+        end
+        
+        # Append new entry to existing DataFrame
+        # Since both df.transaction and new_entry.transaction are now String, vcat should work correctly
+        df = vcat(df, new_entry)
+        
+        # Ensure final DataFrame has correct column order before writing
+        df = df[:, expected_columns]
+        
+        # Final verification: ensure the last row's transaction value matches what we intended
+        # This is a safety check to catch any issues
+        if nrow(df) > 0 && df.id[end] == next_id
+            if df.transaction[end] != transaction
+                # Force correct value if there was any issue
+                df.transaction[end] = transaction
+            end
+        end
+        
+        # Write entire DataFrame back to CSV
+        CSV.write(LOG_FILE, df)
         
         return Dict(
             :success => true,

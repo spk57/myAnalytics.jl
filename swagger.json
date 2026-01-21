@@ -404,7 +404,7 @@
       },
       "LogEntryRequest": {
         "type": "object",
-        "required": ["datetime", "name", "value", "source"],
+        "required": ["datetime", "transaction", "name", "value", "source"],
         "properties": {
           "datetime": {
             "type": "string",

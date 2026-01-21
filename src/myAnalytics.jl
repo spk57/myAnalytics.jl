@@ -138,9 +138,10 @@ route("/api/logger", method = POST) do
     try
         log_request("POST", "/api/logger")
         request_data = Genie.Requests.jsonpayload()
+        log_request("Request data: $request_data", "/api/logger")
         
         # Validate required fields
-        required_fields = ["datetime", "name", "value", "source"]
+        required_fields = ["datetime", "transaction", "name", "value", "source"]
         for field in required_fields
             if !haskey(request_data, field)
                 log_with_timestamp("POST /api/logger - Missing required field: $field")
@@ -152,8 +153,8 @@ route("/api/logger", method = POST) do
         datetime_str = request_data["datetime"]
         datetime = DateTime(datetime_str)
         
-        # Extract transaction (optional field, default to empty string)
-        transaction = haskey(request_data, "transaction") ? string(request_data["transaction"]) : ""
+        # Extract transaction (required field)
+        transaction = string(request_data["transaction"])
         
         # Add log entry
         result = add_log_entry(

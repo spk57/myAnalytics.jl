@@ -2,7 +2,7 @@
 
 ## Overview
 
-The Logger API provides endpoints for storing and retrieving time-series log data with metadata. Each log entry contains a timestamp, name, value, and source identifier.
+The Logger API provides endpoints for storing and retrieving time-series log data with metadata. Each log entry contains a timestamp, transaction identifier, name, value, and source identifier.
 
 ## Endpoints
 
@@ -14,6 +14,7 @@ Create a new log entry.
 ```json
 {
   "datetime": "2025-01-01T10:30:00",
+  "transaction": "logging",
   "name": "temperature",
   "value": 23.5,
   "source": "sensor-01"
@@ -22,6 +23,7 @@ Create a new log entry.
 
 **Request Fields:**
 - `datetime` (required): ISO 8601 formatted datetime string
+- `transaction` (required): Transaction identifier
 - `name` (required): String identifier for the log entry
 - `value` (required): Any value (number, string, boolean, etc.)
 - `source` (required): String identifying the source/origin
@@ -49,6 +51,7 @@ curl -X POST http://localhost:8765/api/logger \
   -H "Content-Type: application/json" \
   -d '{
     "datetime": "2025-01-01T10:30:00",
+    "transaction": "logging",
     "name": "temperature",
     "value": 23.5,
     "source": "sensor-01"
@@ -74,6 +77,7 @@ Retrieve log entries with optional filtering and pagination.
   "entries": [
     {
       "id": 1,
+      "transaction": "logging",
       "datetime": "2025-01-01T10:30:00",
       "name": "temperature",
       "value": 23.5,
@@ -285,9 +289,10 @@ struct LoggerClient
     base_url::String
 end
 
-function log_entry(client::LoggerClient, name::String, value, source::String; dt::DateTime=now())
+function log_entry(client::LoggerClient, transaction::String, name::String, value, source::String; dt::DateTime=now())
     payload = Dict(
         "datetime" => Dates.format(dt, "yyyy-mm-ddTHH:MM:SS"),
+        "transaction" => transaction,
         "name" => name,
         "value" => value,
         "source" => source
@@ -317,7 +322,7 @@ end
 client = LoggerClient("http://localhost:8765")
 
 # Log data
-log_entry(client, "temperature", 23.5, "sensor-01")
+log_entry(client, "logging", "temperature", 23.5, "sensor-01")
 
 # Retrieve entries
 entries = get_entries(client, source="sensor-01")
@@ -339,9 +344,9 @@ The logger stores data persistently in a CSV file (`logger.csv`) located in the 
 
 **CSV File Structure:**
 ```csv
-id,datetime,name,value,source,created_at
-1,2025-01-01T10:30:00,temperature,23.5,sensor-01,2025-01-01T10:30:05
-2,2025-01-01T10:31:00,humidity,65.2,sensor-01,2025-01-01T10:31:03
+id,transaction,datetime,name,value,source,created_at
+1,logging,2025-01-01T10:30:00,temperature,23.5,sensor-01,2025-01-01T10:30:05
+2,logging,2025-01-01T10:31:00,humidity,65.2,sensor-01,2025-01-01T10:31:03
 ```
 
 **Considerations:**

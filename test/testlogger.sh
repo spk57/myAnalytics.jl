@@ -94,6 +94,7 @@ RESPONSE=$(curl -s -X POST "${LOGGER_ENDPOINT}" \
     -H "Content-Type: application/json" \
     -d '{
         "datetime": "2025-01-15T10:30:00",
+        "transaction": "logging",
         "name": "temperature",
         "value": 23.5,
         "source": "sensor-01"
@@ -116,6 +117,7 @@ for i in {1..3}; do
         -H "Content-Type: application/json" \
         -d "{
             \"datetime\": \"2025-01-15T10:3${i}:00\",
+            \"transaction\": \"logging\",
             \"name\": \"humidity\",
             \"value\": $((50 + i * 5)),
             \"source\": \"sensor-02\"
@@ -123,6 +125,7 @@ for i in {1..3}; do
     
     if check_response "$RESPONSE" "success" "true"; then
         print_success "Entry $i created"
+        echo "Response: $RESPONSE"
     else
         print_failure "Entry $i failed"
         echo "Response: $RESPONSE"
@@ -138,8 +141,7 @@ RESPONSE=$(curl -s "${LOGGER_ENDPOINT}")
 if check_response "$RESPONSE" "success" "true" && check_response "$RESPONSE" "entries"; then
     TOTAL=$(echo "$RESPONSE" | grep -o '"total"[[:space:]]*:[[:space:]]*[0-9]*' | grep -o '[0-9]*')
     print_success "Retrieved entries. Total: $TOTAL"
-    echo "Response: $RESPONSE" | head -c 500
-    echo "..."
+    echo "Response: $RESPONSE"
 else
     print_failure "Failed to retrieve entries"
     echo "Response: $RESPONSE"
@@ -153,6 +155,7 @@ RESPONSE=$(curl -s "${LOGGER_ENDPOINT}?limit=2&offset=0")
 
 if check_response "$RESPONSE" "limit" "2" && check_response "$RESPONSE" "offset" "0"; then
     print_success "Pagination parameters working"
+    echo "Response: $RESPONSE"
 else
     print_failure "Pagination failed"
     echo "Response: $RESPONSE"
@@ -166,6 +169,7 @@ RESPONSE=$(curl -s "${LOGGER_ENDPOINT}?source=sensor-01")
 
 if check_response "$RESPONSE" "success" "true"; then
     print_success "Filter by source working"
+    echo "Response: $RESPONSE"
     # Verify all entries have correct source
     if echo "$RESPONSE" | grep -q "sensor-01"; then
         print_success "All entries have correct source"
@@ -183,6 +187,7 @@ RESPONSE=$(curl -s "${LOGGER_ENDPOINT}?name=temperature")
 
 if check_response "$RESPONSE" "success" "true"; then
     print_success "Filter by name working"
+    echo "Response: $RESPONSE"
 else
     print_failure "Filter by name failed"
     echo "Response: $RESPONSE"
@@ -196,6 +201,7 @@ RESPONSE=$(curl -s "${LOGGER_ENDPOINT}?source=sensor-02&name=humidity&limit=10")
 
 if check_response "$RESPONSE" "success" "true"; then
     print_success "Combined filters working"
+    echo "Response: $RESPONSE"
 else
     print_failure "Combined filters failed"
     echo "Response: $RESPONSE"
@@ -222,6 +228,7 @@ print_test "POST /api/logger - Missing datetime field"
 RESPONSE=$(curl -s -X POST "${LOGGER_ENDPOINT}" \
     -H "Content-Type: application/json" \
     -d '{
+        "transaction": "logging",
         "name": "test",
         "value": 100,
         "source": "test"
@@ -229,6 +236,7 @@ RESPONSE=$(curl -s -X POST "${LOGGER_ENDPOINT}" \
 
 if check_response "$RESPONSE" "success" "false" && echo "$RESPONSE" | grep -qi "missing\|datetime"; then
     print_success "Error handling working (missing datetime)"
+    echo "Response: $RESPONSE"
 else
     print_failure "Error handling failed"
     echo "Response: $RESPONSE"
@@ -241,12 +249,14 @@ RESPONSE=$(curl -s -X POST "${LOGGER_ENDPOINT}" \
     -H "Content-Type: application/json" \
     -d '{
         "datetime": "2025-01-15T10:30:00",
+        "transaction": "logging",
         "value": 100,
         "source": "test"
     }')
 
 if check_response "$RESPONSE" "success" "false" && echo "$RESPONSE" | grep -qi "missing.*name"; then
     print_success "Error handling working (missing name)"
+    echo "Response: $RESPONSE"
 else
     print_failure "Error handling failed"
     echo "Response: $RESPONSE"
@@ -259,6 +269,7 @@ RESPONSE=$(curl -s -X POST "${LOGGER_ENDPOINT}" \
     -H "Content-Type: application/json" \
     -d '{
         "datetime": "invalid-date",
+        "transaction": "logging",
         "name": "test",
         "value": 100,
         "source": "test"
@@ -266,6 +277,7 @@ RESPONSE=$(curl -s -X POST "${LOGGER_ENDPOINT}" \
 
 if check_response "$RESPONSE" "success" "false" && echo "$RESPONSE" | grep -qi "datetime\|format\|invalid"; then
     print_success "Error handling working (invalid datetime)"
+    echo "Response: $RESPONSE"
 else
     print_failure "Error handling failed"
     echo "Response: $RESPONSE"
@@ -279,6 +291,7 @@ RESPONSE=$(curl -s -X POST "${LOGGER_ENDPOINT}" \
     -H "Content-Type: application/json" \
     -d '{
         "datetime": "2025-01-15T11:00:00",
+        "transaction": "logging",
         "name": "status",
         "value": "online",
         "source": "system"
@@ -286,6 +299,7 @@ RESPONSE=$(curl -s -X POST "${LOGGER_ENDPOINT}" \
 
 if check_response "$RESPONSE" "success" "true"; then
     print_success "String value accepted"
+    echo "Response: $RESPONSE"
 else
     print_failure "String value rejected"
     echo "Response: $RESPONSE"
@@ -297,6 +311,7 @@ RESPONSE=$(curl -s -X POST "${LOGGER_ENDPOINT}" \
     -H "Content-Type: application/json" \
     -d '{
         "datetime": "2025-01-15T11:01:00",
+        "transaction": "logging",
         "name": "count",
         "value": 42,
         "source": "system"
@@ -304,6 +319,7 @@ RESPONSE=$(curl -s -X POST "${LOGGER_ENDPOINT}" \
 
 if check_response "$RESPONSE" "success" "true"; then
     print_success "Integer value accepted"
+    echo "Response: $RESPONSE"
 else
     print_failure "Integer value rejected"
     echo "Response: $RESPONSE"

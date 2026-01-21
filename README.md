@@ -79,12 +79,13 @@ Use this endpoint for monitoring, health checks, and load balancer probes.
 ### Logger Endpoints
 
 #### POST /api/logger
-Create a new log entry with datetime, name, value, and source.
+Create a new log entry with datetime, transaction, name, value, and source.
 
 **Request Body:**
 ```json
 {
   "datetime": "2025-01-01T10:30:00",
+  "transaction": "logging",
   "name": "temperature",
   "value": 23.5,
   "source": "sensor-01"
