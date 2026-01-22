@@ -12,7 +12,8 @@ using Statistics
 using Plots
 
 # Configuration
-const LOG_FILE = "logger.csv"
+# CSV format: id, transaction, datetime, name, value, source, created_at
+const LOG_FILE = "go-logger/logger.csv"
 const OUTPUT_FILE = "temperature_plot.png"
 
 function main()
@@ -31,6 +32,9 @@ function main()
     end
     
     println("Total entries: $(nrow(df))")
+    println("CSV columns: $(join(names(df), ", "))")
+    
+    # Note: CSV format is: id, transaction, datetime, name, value, source, created_at
     
     # Filter for temperature entries (value column may be string or number)
     temp_df = filter(row -> row.name == "temperature", df)
@@ -43,12 +47,14 @@ function main()
     
     # Extract datetime and temperature values
     # Convert value column to Float64 (handles both string and numeric types)
+    # Handle datetime parsing for RFC3339 format (e.g., "2025-01-15T10:30:00Z")
     temperatures = Float64[]
     datetimes = DateTime[]
     skipped = 0
     
     for (idx, row) in enumerate(eachrow(temp_df))
         try
+            # Parse temperature value
             val = row.value
             temp_val = if val isa AbstractString
                 # Parse string/AbstractString (e.g., String7) to Float64
@@ -60,11 +66,62 @@ function main()
             else
                 error("Value is not a string or number: $(typeof(val))")
             end
+            
+            # Parse datetime - handle both DateTime objects and strings
+            # CSV format uses RFC3339 (e.g., "2025-01-15T10:30:00Z" or "2026-01-21T16:34:45Z")
+            # The 'Z' suffix indicates UTC time, but Julia's DateTime doesn't store timezone
+            dt = row.created_at
+            
+            if dt isa DateTime
+                # Already parsed as DateTime by CSV.jl
+                # CSV.jl should handle RFC3339 format automatically
+                parsed_dt = dt
+            elseif dt isa AbstractString
+                # Parse RFC3339 format string
+                dt_str = strip(string(dt))
+                
+                # Remove 'Z' or 'z' suffix if present (indicates UTC, but we'll treat as naive datetime)
+                if endswith(dt_str, 'Z') || endswith(dt_str, 'z')
+                    dt_str = dt_str[1:end-1]
+                end
+                
+                # Parse the datetime string - try multiple formats
+                parsed_dt = try
+                    # Try ISO8601 format first (most common)
+                    DateTime(dt_str, dateformat"yyyy-mm-ddTHH:MM:SS")
+                catch
+                    try
+                        # Try with fractional seconds
+                        DateTime(dt_str, dateformat"yyyy-mm-ddTHH:MM:SS.s")
+                    catch
+                        try
+                            # Try with timezone offset (e.g., -05:00)
+                            if occursin(r"[+-]\d{2}:\d{2}$", dt_str)
+                                # Remove timezone offset for parsing
+                                dt_str_no_tz = dt_str[1:end-6]
+                                DateTime(dt_str_no_tz, dateformat"yyyy-mm-ddTHH:MM:SS")
+                            else
+                                # Fallback to automatic parsing
+                                DateTime(dt_str)
+                            end
+                        catch
+                            # Last resort: automatic parsing
+                            DateTime(dt_str)
+                        end
+                    end
+                end
+            else
+                error("Datetime is not a DateTime or string: $(typeof(dt))")
+            end
+            
             push!(temperatures, temp_val)
-            push!(datetimes, row.datetime)
+            push!(datetimes, parsed_dt)
         catch e
             skipped += 1
-            println(stderr, "Warning: Skipping row $idx: could not convert value '$(row.value)' to Float64: $e")
+            println(stderr, "Warning: Skipping row $idx: could not process entry: $e")
+            if hasfield(typeof(row), :value)
+                println(stderr, "  Value: $(row.value), Datetime: $(row.datetime)")
+            end
         end
     end
     
@@ -78,18 +135,25 @@ function main()
     
     println("Successfully converted $(length(temperatures)) temperature values")
     
-    # Filter out noisy data: remove entries where temperature is 0.0 or > 150, or datetime before 2026
+    # Debug: Show datetime range before filtering
+    if length(datetimes) > 0
+        println("Datetime range: $(minimum(datetimes)) to $(maximum(datetimes))")
+    end
+    
+    # Filter out noisy data: remove entries where temperature is 0.0 or > 150
+    # Note: Removed datetime filter - include all valid temperature entries regardless of date
     original_count = length(temperatures)
     filtered_temperatures = Float64[]
     filtered_datetimes = DateTime[]
-    min_datetime = DateTime(2026, 1, 1)
     
     for (idx, temp) in enumerate(temperatures)
         dt = datetimes[idx]
-        # Keep entries where: temperature is valid AND datetime is >= 2026-01-01
-        if temp != 0.0 && temp <= 150.0 && dt >= min_datetime
+        # Keep entries where: temperature is valid (not 0.0 and <= 150.0)
+        if temp != 0.0 && temp <= 150.0 && dt >= DateTime(2025, 1, 1)
             push!(filtered_temperatures, temp)
             push!(filtered_datetimes, dt)
+        else
+            println("Skipping entry $idx: temperature = $temp, datetime = $dt") 
         end
     end
     
@@ -139,7 +203,7 @@ function main()
     )
     
     # Format x-axis dates
-    p = plot!(p, xformatter=x -> Dates.format(DateTime(x), "dd\nHH:MM"))
+    #p = plot!(p, xformatter=x -> Dates.format(DateTime(x), "dd\nHH:MM"))
     
     # Save the plot
     println("Saving plot to $OUTPUT_FILE...")
