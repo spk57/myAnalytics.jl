@@ -13,7 +13,7 @@ using Plots
 
 # Configuration
 # CSV format: id, transaction, datetime, name, value, source, created_at
-const LOG_FILE = "go-logger/logger.csv"
+const LOG_FILE = "logger.csv"
 const OUTPUT_FILE = "temperature_plot.png"
 
 function main()

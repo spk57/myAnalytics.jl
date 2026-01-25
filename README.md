@@ -76,47 +76,6 @@ Returns the health status of the API server.
 
 Use this endpoint for monitoring, health checks, and load balancer probes.
 
-### Logger Endpoints
-
-#### POST /api/logger
-Create a new log entry with datetime, transaction, name, value, and source.
-
-**Request Body:**
-```json
-{
-  "datetime": "2025-01-01T10:30:00",
-  "transaction": "logging",
-  "name": "temperature",
-  "value": 23.5,
-  "source": "sensor-01"
-}
-```
-
-**Response:**
-```json
-{
-  "success": true,
-  "message": "Log entry created successfully",
-  "id": 1
-}
-```
-
-#### GET /api/logger
-Retrieve log entries with optional filtering and pagination.
-
-**Query Parameters:**
-- `limit`: Maximum entries to return (default: 100)
-- `offset`: Number of entries to skip (default: 0)
-- `source`: Filter by source
-- `name`: Filter by name
-
-#### GET /api/logger/stats
-Get statistics about logged entries (total count, unique sources/names).
-
-**Data Storage:** Log entries are persisted to `logger.csv` in the project root directory.
-
-**See [Logger API Documentation](docs/LOGGER_API.md) for detailed examples and usage.**
-
 ### Root Endpoint
 ```http
 GET /

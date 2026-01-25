@@ -6,7 +6,6 @@ using Dates
 
 # Include API endpoints
 include("api/getssl.jl")
-include("api/logger.jl")
 
 # Logging helper function with timestamps
 function log_with_timestamp(message::String)
@@ -133,82 +132,6 @@ route("/api/getssl", method = POST) do
     end
 end
 
-# Logger endpoints
-route("/api/logger", method = POST) do
-    try
-        log_request("POST", "/api/logger")
-        request_data = Genie.Requests.jsonpayload()
-        log_request("Request data: $request_data", "/api/logger")
-        
-        # Validate required fields
-        required_fields = ["datetime", "transaction", "name", "value", "source"]
-        for field in required_fields
-            if !haskey(request_data, field)
-                log_with_timestamp("POST /api/logger - Missing required field: $field")
-                return json(Dict(:success => false, :message => "Missing required field: $field"))
-            end
-        end
-        
-        # Parse datetime
-        datetime_str = request_data["datetime"]
-        datetime = DateTime(datetime_str)
-        
-        # Extract transaction (required field)
-        transaction = string(request_data["transaction"])
-        
-        # Add log entry
-        result = add_log_entry(
-            datetime,
-            transaction,
-            string(request_data["name"]),
-            request_data["value"],
-            string(request_data["source"])
-        )
-        
-        log_request("POST", "/api/logger", 200)
-        return json(result)
-    catch e
-        error_msg = sprint(showerror, e)
-        log_error("POST /api/logger", e)
-        if occursin("ArgumentError", error_msg) && occursin("DateTime", error_msg)
-            return json(Dict(:success => false, :message => "Invalid datetime format. Use ISO 8601 format (e.g., 2025-01-01T10:30:00)"))
-        else
-            return json(Dict(:success => false, :message => "Error processing request: $(sprint(showerror, e))"))
-        end
-    end
-end
-
-route("/api/logger", method = GET) do
-    try
-        log_request("GET", "/api/logger")
-        # Get query parameters
-        params = Genie.Requests.getpayload()
-        
-        limit = haskey(params, :limit) ? parse(Int, params[:limit]) : 100
-        offset = haskey(params, :offset) ? parse(Int, params[:offset]) : 0
-        source = haskey(params, :source) ? string(params[:source]) : nothing
-        name = haskey(params, :name) ? string(params[:name]) : nothing
-        
-        result = get_log_entries(limit=limit, offset=offset, source=source, name=name)
-        log_request("GET", "/api/logger", 200)
-        return json(result)
-    catch e
-        log_error("GET /api/logger", e)
-        return json(Dict(:success => false, :message => "Error retrieving log entries: $(sprint(showerror, e))"))
-    end
-end
-
-route("/api/logger/stats", method = GET) do
-    try
-        log_request("GET", "/api/logger/stats")
-        result = get_log_stats()
-        log_request("GET", "/api/logger/stats", 200)
-        return json(result)
-    catch e
-        log_error("GET /api/logger/stats", e)
-        return json(Dict(:success => false, :message => "Error retrieving stats: $(sprint(showerror, e))"))
-    end
-end
 
 r=routes()
 log_with_timestamp("Routes registered: $r")

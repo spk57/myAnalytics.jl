@@ -28,5 +28,14 @@ test/runtests.log
 logger.csv
 *.png
 
-# Go files
-go-logger/logger-server
+#R environment
+.Rhistory
+.Renviron
+.Rprofile
+.RData
+.RDataTmp
+.RDataTmp.lock
+.RDataTmp.lock.lock
+.RDataTmp.lock.lock.lock
+.RDataTmp.lock.lock.lock.lock
+.RDataTmp.lock.lock.lock.lock.lock
