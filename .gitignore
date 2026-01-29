@@ -25,7 +25,7 @@ Thumbs.db
 test/runtests.log
 
 # Data files
-logger.csv
+*.csv
 *.png
 
 #R environment
